@@ -1,17 +1,12 @@
-from django.shortcuts import render
-from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Content
-from .serializers import ContentSerializer 
-# from .serializers import ContentSerializer
+from .serializers import ContentSerializer, ContentViewSerializer
+
 from django.db.models import Q
 from rest_framework import serializers
-import os
-from django.core.files.storage import default_storage
-from django.core.files.base import ContentFile
 
 
 @api_view(['GET'])
@@ -26,7 +21,7 @@ def get_user_media(request):
         Q(content_type=Content.PUBLIC) | (Q(content_type=Content.GROUP) & Q(groups__in=user.contentgroup_set.all()))
     )
     accessible_media = user_media.union(common_media)
-    serializer = ContentSerializer(accessible_media, many=True)
+    serializer = ContentViewSerializer(accessible_media, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
     
 
@@ -44,7 +39,6 @@ def upload_content(request):
 
     data = request.data
     data['user'] = request.user.id
-
     serializer = ContentSerializer(data=data,context={'request': request})
 
     try:
@@ -56,3 +50,23 @@ def upload_content(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
+
+
+# for more control over data we can do like 
+# just an example not using s3 bucket
+# import boto3
+# from botocore.exceptions import ClientError
+
+# def generate_presigned_url(bucket_name, object_key, expiration=3600):
+#     s3_client = boto3.client('s3')
+#     try:
+#         response = s3_client.generate_presigned_url(
+#             'get_object',
+#             Params={'Bucket': bucket_name, 'Key': object_key},
+#             ExpiresIn=expiration
+#         )
+#         return response
+#     except ClientError as e:
+#         # Handle error
+#         print(e)
+#         return None

@@ -18,3 +18,15 @@ class ContentSerializer(serializers.ModelSerializer):
         return value
         
     
+    
+class ContentGroupViewSeralizer(serializers.ModelSerializer):
+    class Meta:
+        model=ContentGroup
+        fields=['id', 'group_name', 'description']
+
+class ContentViewSerializer(serializers.ModelSerializer):
+    groups = ContentGroupViewSeralizer(many=True, read_only=True)
+    class Meta:
+        model = Content
+        fields = '__all__'  
+    
